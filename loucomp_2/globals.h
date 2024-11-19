@@ -61,17 +61,20 @@ extern int lineno; /* source line number for listing */
 /**************************************************/
 /***********   Syntax tree for parsing ************/
 /**************************************************/
-
-typedef enum {DeclK,StmtK,ExpK,ParamK,CompoundK} NodeKind;
-typedef enum {FuncK,VarK} DeclKind;
-typedef enum {IfK,WhileK,ReturnK} StmtKind;
-typedef enum {AssignK,OpK,ConstK,VarK,CallK} ExpKind;
+// pj2
+typedef enum {TypeK,DeclK,StmtK,ExpK} NodeKind;
+typedef enum {VarDK,FuncDK} DeclKind;
+typedef enum {IfK,IfElseK,WhileK,ReturnK,CompoundK} StmtKind;
+typedef enum {AssignK,OpK,ConstK,VarK,CallK,ParamK} ExpKind;
 
 /* ExpType is used for type checking */
-typedef enum {Void,Integer,Voidarr,Intarr} ExpType;
+typedef enum {Void,Integer} ExpType;
+// typedef enum {Voidarr,Intarr} ArrType;
+const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
 
 #define MAXCHILDREN 3
 
+// pj2
 typedef struct treeNode
    { struct treeNode * child[MAXCHILDREN];
      struct treeNode * sibling;
@@ -82,6 +85,7 @@ typedef struct treeNode
              int val;
              char * name; } attr;
      ExpType type; /* for type checking of exps */
+     int isArray;
    } TreeNode;
 
 /**************************************************/
