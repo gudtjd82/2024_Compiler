@@ -16,7 +16,10 @@
 static char * savedName; /* for use in assignments */
 static int savedLineNo;  /* ditto */
 static TreeNode * savedTree; /* stores syntax tree for later return */
-
+/* extern int yylex(void); */
+static int yylex(void);
+int yyerror(char*);
+TreeNode * parse(void);
 %}
 
 %token IF ELSE WHILE RETURN INT VOID
@@ -223,7 +226,7 @@ var         : ID
 simple_exp  : add_exp relop add_exp
                 {
                   $$ = newExpNode(OpK);
-                  $$->attr.op = $2;
+                  $$->attr.op = $2->attr.op;
                   $$->child[0] = $1;
                   $$->child[1] = $3; 
                 }
@@ -239,7 +242,7 @@ relop       : LE { $$ = $1; }
 add_exp     : add_exp addop term
                 {
                   $$ = newExpNode(OpK);
-                  $$->attr.op = $2;
+                  $$->attr.op = $2->attr.op;
                   $$->child[0] = $1;
                   $$->child[1] = $3;
                 }
@@ -250,7 +253,7 @@ addop       : PLUS { $$ = $1; }
             ;
 term        : term mulop factor 
                  { $$ = newExpNode(OpK);
-                   $$->attr.op = $2;
+                   $$->attr.op = $2->attr.op;
                    $$->child[0] = $1;
                    $$->child[1] = $3;
                  }

@@ -13,6 +13,10 @@
  */
 void printToken( TokenType, const char* );
 
+// pj2
+TreeNode * newTypeNode(void);
+TreeNode * newDeclNode(DeclKind);
+
 /* Function newStmtNode creates a new statement
  * node for syntax tree construction
  */
