@@ -1,0 +1,33 @@
+
+C-MINUS COMPILATION: ./test/my_test.1.txt
+
+Syntax tree:
+  Function Declaration: name = complexFunction, return type = int
+    Parameter: name = x, type = int
+    Parameter: name = y, type = int
+    Compound Statement:
+      Variable Declaration: name = result, type = int
+      If-Else Statement:
+        Op: >
+          Variable: name = x
+          Variable: name = y
+        Compound Statement:
+          Assign:
+            Variable: name = result
+            Variable: name = x
+        Compound Statement:
+          Assign:
+            Variable: name = result
+            Variable: name = y
+      While Statement:
+        Op: >
+          Variable: name = result
+          Const: 0
+        Compound Statement:
+          Assign:
+            Variable: name = result
+            Op: -
+              Variable: name = result
+              Const: 1
+      Return Statement:
+        Variable: name = result
