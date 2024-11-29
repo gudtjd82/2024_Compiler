@@ -65,7 +65,7 @@ void printToken( TokenType token, const char* tokenString )
  * node for syntax tree construction
  */
 // pj2
-TreeNode * newTypeNode(void)
+TreeNode * newBasicNode(void)
 { TreeNode * t = (TreeNode *) malloc(sizeof(TreeNode));
   int i;
   if (t==NULL)
@@ -76,6 +76,7 @@ TreeNode * newTypeNode(void)
     t->nodekind = TypeK;
     t->lineno = lineno;
     t->type = Void;
+    t->attr.name = NULL;
   }
   return t;
 }
@@ -165,6 +166,7 @@ static void printSpaces(void)
 }
 
 // pj2
+const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
 const char* get_typeString(ExpType type, int isArray)
 {
   if (isArray)
@@ -230,7 +232,7 @@ void printTree( TreeNode * tree )
     else if (tree->nodekind==ExpK)
     { switch (tree->kind.exp) {
         case AssignK:
-          fprintf(listing,"Assign: ");
+          fprintf(listing,"Assign: \n");
           break;
         case OpK:
           fprintf(listing,"Op: ");

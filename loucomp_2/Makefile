@@ -7,6 +7,7 @@
 CC = gcc
 
 CFLAGS = -W -Wall
+LDFLAGS = -L/opt/homebrew/opt/flex/lib
 
 OBJS = main.o util.o lex.yy.o y.tab.o
 
@@ -17,7 +18,7 @@ clean:
 	rm -vf cminus_parser *.o lex.yy.c y.tab.c y.tab.h y.output
 
 cminus_parser: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ -lfl
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS) -lfl
 
 main.o: main.c globals.h util.h scan.h parse.h y.tab.h
 	$(CC) $(CFLAGS) -c main.c

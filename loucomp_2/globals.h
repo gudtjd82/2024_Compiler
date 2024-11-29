@@ -72,7 +72,7 @@ typedef enum {AssignK,OpK,ConstK,VarK,CallK,ParamK} ExpKind;
 /* ExpType is used for type checking */
 typedef enum {Void,Integer} ExpType;
 // typedef enum {Voidarr,Intarr} ArrType;
-const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
+// const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
 
 #define MAXCHILDREN 3
 

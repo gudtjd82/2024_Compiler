@@ -47,17 +47,17 @@
      VOID = 263,
      ID = 264,
      NUM = 265,
-     ASSIGN = 266,
-     EQ = 267,
-     NE = 268,
-     LT = 269,
-     LE = 270,
+     MINUS = 266,
+     PLUS = 267,
+     OVER = 268,
+     TIMES = 269,
+     GE = 270,
      GT = 271,
-     GE = 272,
-     PLUS = 273,
-     MINUS = 274,
-     TIMES = 275,
-     OVER = 276,
+     LE = 272,
+     LT = 273,
+     NE = 274,
+     EQ = 275,
+     ASSIGN = 276,
      LPAREN = 277,
      RPAREN = 278,
      LBRACKET = 279,
@@ -79,17 +79,17 @@
 #define VOID 263
 #define ID 264
 #define NUM 265
-#define ASSIGN 266
-#define EQ 267
-#define NE 268
-#define LT 269
-#define LE 270
+#define MINUS 266
+#define PLUS 267
+#define OVER 268
+#define TIMES 269
+#define GE 270
 #define GT 271
-#define GE 272
-#define PLUS 273
-#define MINUS 274
-#define TIMES 275
-#define OVER 276
+#define LE 272
+#define LT 273
+#define NE 274
+#define EQ 275
+#define ASSIGN 276
 #define LPAREN 277
 #define RPAREN 278
 #define LBRACKET 279

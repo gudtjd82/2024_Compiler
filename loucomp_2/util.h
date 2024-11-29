@@ -14,7 +14,7 @@
 void printToken( TokenType, const char* );
 
 // pj2
-TreeNode * newTypeNode(void);
+TreeNode * newBasicNode(void);      // print될 일이 없는 node
 TreeNode * newDeclNode(DeclKind);
 
 /* Function newStmtNode creates a new statement

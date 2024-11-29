@@ -1,6 +1,6 @@
 /****************************************************/
-/* File: tiny.y                                     */
-/* The TINY Yacc/Bison specification file           */
+/* File: cminus.y                                     */
+/* The C-MINUS Yacc/Bison specification file           */
 /* Compiler Construction: Principles and Practice   */
 /* Kenneth C. Louden                                */
 /****************************************************/
@@ -22,12 +22,24 @@ int yyerror(char*);
 TreeNode * parse(void);
 %}
 
-%token IF ELSE WHILE RETURN INT VOID
+%nonassoc IF
+%nonassoc ELSE
+%token WHILE RETURN
+%token INT VOID
+
 %token ID NUM 
-%token ASSIGN EQ NE LT LE GT GE PLUS MINUS TIMES OVER LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE SEMI COMMA
+
+%left PLUS MINUS
+%left TIMES OVER
+%nonassoc LT LE GT GE
+%nonassoc EQ NE
+%right ASSIGN
+
+%token LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE SEMI COMMA
+
 %token ENDFILE ERROR 
 
-%% /* Grammar for TINY */
+%% /* Grammar for C-MINUS */
 
 program     : decl_list
                  { savedTree = $1;} 
@@ -49,17 +61,17 @@ decl_list   : decl_list decl
 decl        : var_decl  { $$ = $1; }
             | func_decl { $$ = $1; }
             ;
-var_decl    : type ID SEMI
+var_decl    : type identifier SEMI
                 {
                   TreeNode *t = newDeclNode(VarDK);
-                  t->attr.name = copyString(tokenString);
+                  t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
                   $$ = t;
                 }
-            | type ID LBRACKET NUM RBRACKET SEMI
+            | type identifier LBRACKET NUM RBRACKET SEMI
                 {
                   TreeNode *t = newDeclNode(VarDK);
-                  t->attr.name = copyString(tokenString);
+                  t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
                   t->isArray = TRUE;
 
@@ -72,19 +84,27 @@ var_decl    : type ID SEMI
             ;
 type        : INT 
                 {
-                  $$ = newTypeNode();
+                  $$ = newBasicNode();
                   $$->type = Integer;
                 }
             | VOID 
                 {
-                  $$ = newTypeNode();
+                  $$ = newBasicNode();
                   $$->type = Void;
                 }
             ;
-func_decl   : type ID LPAREN params RPAREN compound
+identifier  : ID
+                {
+                  TreeNode *t = newBasicNode();
+                  t->attr.name = copyString(tokenString);
+
+                  $$ = t;
+                }
+            ;
+func_decl   : type identifier LPAREN params RPAREN compound
                 {
                   TreeNode *t = newDeclNode(FuncDK);
-                  t->attr.name = copyString(tokenString);
+                  t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
                   t->child[0] = $4;
                   t->child[1] = $6;
@@ -116,18 +136,18 @@ param_list  : param_list COMMA param
                 }
             | param { $$ = $1; }
             ;
-param       : type ID
+param       : type identifier
                 {
                   TreeNode *t = newExpNode(ParamK);
-                  t->attr.name = copyString(tokenString);
+                  t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
 
                   $$ = t;
                 }
-            | type ID LBRACKET RBRACKET
+            | type identifier LBRACKET RBRACKET
                 {
                   TreeNode *t = newExpNode(ParamK);
-                  t->attr.name = copyString(tokenString);
+                  t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
                   t->isArray = TRUE;
 
@@ -135,6 +155,13 @@ param       : type ID
                 }
             ;
 compound    : LBRACE local_decls stmt_list RBRACE
+                {
+                  TreeNode *t = newStmtNode(CompoundK);
+                  t->child[0] = $2;
+                  t->child[1] = $3;
+
+                  $$ = t;
+                }
             ;
 local_decls : local_decls var_decl
                 {
@@ -171,12 +198,11 @@ stmt        : exp_stmt { $$ = $1; }
             | if_stmt { $$ = $1; }
             | while_stmt { $$ = $1; }
             | return_stmt { $$ = $1; }
-            | error  { $$ = NULL; }
             ;
 exp_stmt    : exp SEMI  { $$ = $1; }
             | SEMI      { $$ = NULL; }
             ;
-if_stmt     : IF LPAREN exp RPAREN stmt
+if_stmt     : IF LPAREN exp RPAREN stmt %prec IF
                  { $$ = newStmtNode(IfK);
                    $$->child[0] = $3;
                    $$->child[1] = $5;
@@ -212,14 +238,16 @@ exp         : var ASSIGN exp
                 }
             | simple_exp { $$ = $1; }
             ;
-var         : ID
+var         : identifier
                 {
                   $$ = newExpNode(VarK);
-                  $$->attr.name = copyString(tokenString);
+                  $$->attr.name = copyString($1->attr.name);
                 }
-            | ID LBRACKET exp RBRACKET
+            | identifier LBRACKET exp RBRACKET
                 {
                   $$ = newExpNode(VarK);
+                  $$->attr.name = copyString($1->attr.name);
+                  $$->isArray = TRUE;
                   $$->child[0] = $3;
                 }
             ;
@@ -232,12 +260,36 @@ simple_exp  : add_exp relop add_exp
                 }
             | add_exp { $$ = $1; }
             ;
-relop       : LE { $$ = $1; }
-            | LT { $$ = $1; }
-            | GT { $$ = $1; }
-            | GE { $$ = $1; }
-            | EQ { $$ = $1; }
-            | NE { $$ = $1; }
+relop       : LE 
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = LE;
+                }
+            | LT
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = LT;
+                }
+            | GT
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = GT;
+                }
+            | GE
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = GE;
+                }
+            | EQ
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = EQ;
+                }
+            | NE
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = NE;
+                }
             ;
 add_exp     : add_exp addop term
                 {
@@ -248,8 +300,16 @@ add_exp     : add_exp addop term
                 }
             | term { $$ = $1; }
             ;
-addop       : PLUS { $$ = $1; }
-            | MINUS { $$ = $1; }
+addop       : PLUS
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = PLUS;
+                }
+            | MINUS
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = MINUS;
+                }            
             ;
 term        : term mulop factor 
                  { $$ = newExpNode(OpK);
@@ -259,8 +319,16 @@ term        : term mulop factor
                  }
             | factor { $$ = $1; }
             ;
-mulop       : TIMES { $$ = $1; }
-            | OVER { $$ = $1; }
+mulop       : TIMES
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = TIMES;
+                }
+            | OVER
+                { 
+                  $$ = newBasicNode();
+                  $$->attr.op = OVER;
+                }            
             ;
 factor      : LPAREN exp RPAREN
                  { $$ = $2; }
@@ -271,12 +339,11 @@ factor      : LPAREN exp RPAREN
                   $$ = newExpNode(ConstK);
                   $$->attr.val = atoi(tokenString);
                 }
-            | error { $$ = NULL; }
             ;
-call        : ID LPAREN args RPAREN
+call        : identifier LPAREN args RPAREN
               {
                 $$ = newExpNode(CallK);
-                $$->attr.name = copyString(tokenString);
+                $$->attr.name = copyString($1->attr.name);
                 $$->child[0] = $3;
               }
             ;
@@ -316,7 +383,12 @@ static int yylex(void)
 { return getToken(); }
 
 TreeNode * parse(void)
-{ yyparse();
+{ 
+  yyparse();
+  if (savedTree == NULL) {
+    fprintf(listing, "Error: savedTree is NULL\n");
+    exit(1);
+  }
   return savedTree;
 }
 
