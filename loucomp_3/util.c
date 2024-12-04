@@ -90,11 +90,10 @@ TreeNode * newDeclNode(DeclKind kind)
     for (i=0;i<MAXCHILDREN;i++) t->child[i] = NULL;
     t->sibling = NULL;
     t->nodekind = DeclK;
-    t->kind.delc = kind;
+    t->kind.decl = kind;
     t->lineno = lineno;
     t->attr.name = NULL;
     t->type = Void;
-    t->isArray = FALSE;
   }
   return t;
 }
@@ -129,7 +128,6 @@ TreeNode * newExpNode(ExpKind kind)
     t->kind.exp = kind;
     t->lineno = lineno;
     t->type = Void;
-    t->isArray = FALSE;
   }
   return t;
 }
@@ -167,12 +165,9 @@ static void printSpaces(void)
 
 // pj2
 const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
-const char* get_typeString(ExpType type, int isArray)
+const char* get_typeString(ExpType type)
 {
-  if (isArray)
-    return typeStrings[type + 2];
-  else
-    return typeStrings[type];
+  return typeStrings[type];
 }
 
 /* procedure printTree prints a syntax tree to the 
@@ -185,13 +180,13 @@ void printTree( TreeNode * tree )
   while (tree != NULL) {
     printSpaces();
     if (tree->nodekind==DeclK)
-    { switch (tree->kind.delc)
+    { switch (tree->kind.decl)
       {
         case VarDK:
-          fprintf(listing, "Variable Declaration: name = %s, type = %s\n", tree->attr.name, get_typeString(tree->type, tree->isArray));
+          fprintf(listing, "Variable Declaration: name = %s, type = %s\n", tree->attr.name, get_typeString(tree->type));
           break;
         case FuncDK:
-          fprintf(listing, "Function Declaration: name = %s, return type = %s\n", tree->attr.name, get_typeString(tree->type, tree->isArray));
+          fprintf(listing, "Function Declaration: name = %s, return type = %s\n", tree->attr.name, get_typeString(tree->type));
           break;
         default:
           fprintf(listing, "Unknown DeclNode kind\n");
@@ -251,7 +246,7 @@ void printTree( TreeNode * tree )
           if (tree->type == Void)
             fprintf(listing, "Void Parameter\n");
           else
-            fprintf(listing,"Parameter: name = %s, type = %s\n",tree->attr.name, get_typeString(tree->type, tree->isArray));
+            fprintf(listing,"Parameter: name = %s, type = %s\n",tree->attr.name, get_typeString(tree->type));
           break;
         // case IdK:
         //   fprintf(listing,"Id: %s\n",tree->attr.name);

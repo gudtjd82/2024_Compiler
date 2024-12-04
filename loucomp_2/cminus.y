@@ -16,7 +16,6 @@
 static char * savedName; /* for use in assignments */
 static int savedLineNo;  /* ditto */
 static TreeNode * savedTree; /* stores syntax tree for later return */
-/* extern int yylex(void); */
 static int yylex(void);
 int yyerror(char*);
 TreeNode * parse(void);
@@ -68,15 +67,14 @@ var_decl    : type identifier SEMI
                   t->type = $1->type;
                   $$ = t;
                 }
-            | type identifier LBRACKET NUM RBRACKET SEMI
+            | type identifier LBRACKET number RBRACKET SEMI
                 {
                   TreeNode *t = newDeclNode(VarDK);
                   t->attr.name = copyString($2->attr.name);
-                  t->type = $1->type;
-                  t->isArray = TRUE;
+                  t->type = $1->type+2;
 
                   TreeNode *arrSize = newExpNode(ConstK);
-                  arrSize->attr.val = atoi(tokenString);
+                  arrSize->attr.val = $4->attr.val;
                   t->child[0] = arrSize;
 
                   $$ = t;
@@ -99,6 +97,12 @@ identifier  : ID
                   t->attr.name = copyString(tokenString);
 
                   $$ = t;
+                }
+            ;
+number      : NUM
+                {
+                  $$ = newExpNode(ConstK);
+                  $$->attr.val = atoi(tokenString);
                 }
             ;
 func_decl   : type identifier LPAREN params RPAREN compound
@@ -148,8 +152,7 @@ param       : type identifier
                 {
                   TreeNode *t = newExpNode(ParamK);
                   t->attr.name = copyString($2->attr.name);
-                  t->type = $1->type;
-                  t->isArray = TRUE;
+                  t->type = $1->type+2;
 
                   $$ = t;
                 }
@@ -247,7 +250,6 @@ var         : identifier
                 {
                   $$ = newExpNode(VarK);
                   $$->attr.name = copyString($1->attr.name);
-                  $$->isArray = TRUE;
                   $$->child[0] = $3;
                 }
             ;

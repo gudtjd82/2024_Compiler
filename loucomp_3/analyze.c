@@ -13,6 +13,12 @@
 /* counter for variable memory locations */
 static int location = 0;
 
+// pj3
+void init_scopeList()
+{
+  init_currScope();
+}
+
 /* Procedure traverse is a generic recursive 
  * syntax tree traversal routine:
  * it applies preProc in preorder and postProc 
@@ -46,10 +52,57 @@ static void nullProc(TreeNode * t)
  * the symbol table 
  */
 static void insertNode( TreeNode * t)
-{ switch (t->nodekind)
-  { case StmtK:
+{ 
+  static int isFirstCompound = FALSE;
+  switch (t->nodekind)
+  { 
+    case DeclK:
+      switch (t->kind.decl)
+      {
+        case VarDK:
+          if(st_lookup(t->attr.name) == -1)
+          {
+            if (t->type == Void)
+              print_error(t->attr.name, t->lineno, 2);
+            else
+              st_insert(t, location++);
+          }
+          else
+            print_error(t->attr.name, t->lineno, 10);
+          break;
+        case FuncDK:
+          if(st_lookup_all(t->attr.name) == -1)
+          {
+            st_insert(t, location++);
+            insert_scope(t->attr.name);
+            isFirstCompound = TRUE;
+          }
+          else
+            print_error(t->attr.name, t->lineno, 10);
+          break;
+        default:
+          break;
+      }
+      break;
+    case StmtK:
       switch (t->kind.stmt)
-      { case AssignK:
+      { 
+        case IfK: 
+        case IfElseK:
+        case WhileK:
+          insert_scope(NULL);
+          isFirstCompound = TRUE;
+          break;
+        case ReturnK: 
+        case CompoundK:
+          if(!isFirstCompound)
+          {
+            insert_scope(NULL);
+          }
+          else
+            isFirstCompound = FALSE;
+          break;
+
         case ReadK:
           if (st_lookup(t->attr.name) == -1)
           /* not yet in table, so treat as new definition */
@@ -94,8 +147,47 @@ void buildSymtab(TreeNode * syntaxTree)
   }
 }
 
-static void typeError(TreeNode * t, char * message)
-{ fprintf(listing,"Type error at line %d: %s\n",t->lineno,message);
+static void print_error(char *name, int lineno, int errorNo)
+{ 
+  switch (errorNo)
+  {
+    case 0:
+      fprintf(listing, "Error: undeclared function \"%s\" is called at line %d\n", name, lineno);
+      break;
+    case 1:
+      fprintf(listing, "Error: undeclared variable \"%s\" is used at line %d\n", name, lineno);
+      break;
+    case 2:
+      fprintf(listing, "Error: The void-type variable is declared at line %d (name : \"%s\")\n", lineno, name);
+      break;
+    case 3:
+      fprintf(listing, "Error: Invalid array indexing at line %d (name : \"%s\"). indicies should be integer\n", lineno, name);
+      break;
+    case 4:
+      fprintf(listing, "Error: Invalid array indexing at line %d (name : \"%s\"). indexing can only allowed for int[] variables\n", lineno, name);
+      break;
+    case 5:
+      fprintf(listing, "Error: Invalid function call at line %d (name : \"%s\")\n", lineno, name);
+      break;
+    case 6:
+      fprintf(listing, "Error: Invalid return at line %d\n", lineno);
+      break;
+    case 7:
+      fprintf(listing, "Error: invalid assignment at line %d\n", lineno);
+      break;
+    case 8:
+      fprintf(listing, "Error: invalid operation at line %d\n", lineno);
+      break;
+    case 9:
+      fprintf(listing, "Error: invalid condition at line %d\n", lineno);
+      break;
+    case 10:
+      fprintf(listing, "Error: Symbol \"%s\" is redefined at line %d\n", name, lineno);
+      break;
+    
+    default:
+      break;
+  }
   Error = TRUE;
 }
 

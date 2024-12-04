@@ -70,7 +70,7 @@ typedef enum {IfK,IfElseK,WhileK,ReturnK,CompoundK} StmtKind;
 typedef enum {AssignK,OpK,ConstK,VarK,CallK,ParamK} ExpKind;
 
 /* ExpType is used for type checking */
-typedef enum {Void,Integer} ExpType;
+typedef enum {Void,Integer, VoidArr, IntArr} ExpType;
 
 #define MAXCHILDREN 3
 
@@ -80,12 +80,11 @@ typedef struct treeNode
      struct treeNode * sibling;
      int lineno;
      NodeKind nodekind;
-     union { DeclKind delc; StmtKind stmt; ExpKind exp;} kind;
+     union { DeclKind decl; StmtKind stmt; ExpKind exp;} kind;
      union { TokenType op;
              int val;
              char * name; } attr;
      ExpType type; /* for type checking of exps */
-     int isArray;
    } TreeNode;
 
 /**************************************************/

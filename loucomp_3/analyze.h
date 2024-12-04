@@ -8,6 +8,10 @@
 #ifndef _ANALYZE_H_
 #define _ANALYZE_H_
 
+// pj3
+static void print_error(char *name, int lineno, int errorNo);
+void init_scopeList();
+
 /* Function buildSymtab constructs the symbol 
  * table by preorder traversal of the syntax tree
  */

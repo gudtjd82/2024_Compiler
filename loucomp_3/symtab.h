@@ -9,12 +9,20 @@
 #ifndef _SYMTAB_H_
 #define _SYMTAB_H_
 
+// pj3
+#define MAXCHILDREN 100
+
+void init_currScope();
+ScopeList insert_scope(char * name);
+void exitScope(ScopeList currScope);
+int st_lookup_all ( char * name );
+
 /* Procedure st_insert inserts line numbers and
  * memory locations into the symbol table
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert( char * name, int lineno, int loc );
+void st_insert(TreeNode * s, int loc );
 
 /* Function st_lookup returns the memory 
  * location of a variable or -1 if not found
