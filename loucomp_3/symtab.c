@@ -32,8 +32,9 @@ static int hash ( char * key )
   return temp;
 }
 
-// pj2
+// pj3
 typedef enum {Variable, Function} SymK;
+const char* SymKStrings[] = {"Variable", "Function"};
 
 /* the list of line numbers of the source 
  * code in which a variable is referenced
@@ -112,7 +113,7 @@ void exitScope(ScopeList currScope)
 }
 
 /* the hash table */
-static BucketList hashTable[SIZE];
+// static BucketList hashTable[SIZE];
 
 /* Procedure st_insert inserts line numbers and
  * memory locations into the symbol table
@@ -136,8 +137,8 @@ void st_insert(TreeNode * s, int loc )
     l->lines->lineno = s->lineno;
     l->memloc = loc;
     l->lines->next = NULL;
-    l->next = hashTable[h];
-    hashTable[h] = l; 
+    l->next = currScope->hashTable[h];
+    currScope->hashTable[h] = l; 
   }
   else /* found in table, so just add line number */
   { LineList t = l->lines;
@@ -177,21 +178,30 @@ int st_lookup_all ( char * name )
   return -1;
 }
 
+// pj3
+const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
 /* Procedure printSymTab prints a formatted 
  * listing of the symbol table contents 
  * to the listing file
  */
-void printSymTab(FILE * listing)
-{ int i;
-  fprintf(listing,"Variable Name  Location   Line Numbers\n");
-  fprintf(listing,"-------------  --------   ------------\n");
+void printSymTab(FILE * listing, ScopeList scope)
+{ 
+  int i;
+  BucketList l;
+  fprintf(listing,"Symbol Name    Symbol Kind    Symbol Type    Scope Name    Location   Line Numbers\n");
+  fprintf(listing,"------------   ------------   ------------   ------------  --------   ------------\n");
   for (i=0;i<SIZE;++i)
-  { if (hashTable[i] != NULL)
-    { BucketList l = hashTable[i];
+  { if ((l = scope->hashTable[i]) != NULL)
+    { 
+      // BucketList l =scope->hashTable[i];
       while (l != NULL)
-      { LineList t = l->lines;
+      { 
+        LineList t = l->lines;
         fprintf(listing,"%-14s ",l->name);
-        fprintf(listing,"%-8d  ",l->memloc);
+        fprintf(listing,"%-14s ",SymKStrings[l->symbolK]);
+        fprintf(listing,"%-14s ",typeStrings[l->type]);
+        fprintf(listing,"%-14s ",l->scope_name);
+        fprintf(listing,"%-9d  ",l->memloc);
         while (t != NULL)
         { fprintf(listing,"%4d ",t->lineno);
           t = t->next;

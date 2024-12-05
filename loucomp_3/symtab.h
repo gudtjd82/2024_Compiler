@@ -12,6 +12,8 @@
 // pj3
 #define MAXCHILDREN 100
 
+typedef struct scopeList *ScopeList;
+
 void init_currScope();
 ScopeList insert_scope(char * name);
 void exitScope(ScopeList currScope);
