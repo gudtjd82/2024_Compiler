@@ -11,12 +11,14 @@
 #include "analyze.h"
 
 /* counter for variable memory locations */
+// scope 마다 다른 location var을 가져야됨.
 static int location = 0;
+static ScopeList global_scope=NULL;
 
 // pj3
 void init_scopeList()
 {
-  init_currScope();
+  global_scope = init_currScope();
 }
 
 /* Procedure traverse is a generic recursive 
@@ -60,20 +62,22 @@ static void insertNode( TreeNode * t)
       switch (t->kind.decl)
       {
         case VarDK:
+          // redefined error check
           if(st_lookup(t->attr.name) == -1)
           {
-            if (t->type == Void)
-              print_error(t->attr.name, t->lineno, 2);
-            else
-              st_insert(t, location++);
+            // if (t->type == Void)
+            //   print_error(t->attr.name, t->lineno, 2);
+            // else
+              st_insert(t, NULL);
           }
           else
             print_error(t->attr.name, t->lineno, 10);
           break;
         case FuncDK:
-          if(st_lookup_all(t->attr.name) == -1)
+          // redefined error check
+          if(st_lookup_all(t->attr.name) == NULL)
           {
-            st_insert(t, location++);
+            st_insert(t, NULL);
             insert_scope(t->attr.name);
             isFirstCompound = TRUE;
           }
@@ -94,6 +98,8 @@ static void insertNode( TreeNode * t)
           isFirstCompound = TRUE;
           break;
         case ReturnK: 
+          exitScope();
+          break;
         case CompoundK:
           if(!isFirstCompound)
           {
@@ -102,31 +108,57 @@ static void insertNode( TreeNode * t)
           else
             isFirstCompound = FALSE;
           break;
-
-        case ReadK:
-          if (st_lookup(t->attr.name) == -1)
-          /* not yet in table, so treat as new definition */
-            st_insert(t->attr.name,t->lineno,location++);
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
-            st_insert(t->attr.name,t->lineno,0);
-          break;
+        // case ReadK:
+        //   if (st_lookup(t->attr.name) == -1)
+        //   /* not yet in table, so treat as new definition */
+        //     st_insert(t->attr.name,t->lineno,location++);
+        //   else
+        //   /* already in table, so ignore location, 
+        //      add line number of use only */ 
+        //     st_insert(t->attr.name,t->lineno,0);
+        //   break;
         default:
           break;
       }
       break;
     case ExpK:
       switch (t->kind.exp)
-      { case IdK:
-          if (st_lookup(t->attr.name) == -1)
-          /* not yet in table, so treat as new definition */
-            st_insert(t->attr.name,t->lineno,location++);
-          else
-          /* already in table, so ignore location, 
-             add line number of use only */ 
-            st_insert(t->attr.name,t->lineno,0);
+      { 
+        case AssignK:
+        case OpK:
+        case ConstK:
           break;
+        case VarK:
+          // undeclared variable check
+          ScopeList found_scope = st_lookup_all(t->attr.name);
+          if(found_scope == NULL) /* undetermined variable */
+          {
+            t->kind.decl = VarDK;
+            t->type = Undet;
+          }
+          st_insert(t, found_scope);
+          break;
+        case CallK:
+          // undeclared function call check
+          ScopeList found_scope = st_lookup_all(t->attr.name);
+          if(found_scope == NULL) /* undetermined variable */
+          {
+            t->kind.decl = FuncDK;
+            t->type = Undet;
+          }
+          st_insert(t, found_scope);
+          break;
+        case ParamK:
+          break;
+        // case IdK:
+        //   if (st_lookup(t->attr.name) == -1)
+        //   /* not yet in table, so treat as new definition */
+        //     st_insert(t->attr.name,t->lineno,location++);
+        //   else
+        //   /* already in table, so ignore location, 
+        //      add line number of use only */ 
+        //     st_insert(t->attr.name,t->lineno,0);
+        //   break;
         default:
           break;
       }
@@ -142,8 +174,12 @@ static void insertNode( TreeNode * t)
 void buildSymtab(TreeNode * syntaxTree)
 { traverse(syntaxTree,insertNode,nullProc);
   if (TraceAnalyze)
-  { fprintf(listing,"\nSymbol table:\n\n");
-    printSymTab(listing);
+  { 
+    fprintf(listing,"\nSymbol table:\n\n");
+    if(global_scope != NULL)
+      printSymTab(listing, global_scope);
+    else
+      fprintf(listing, "Global scope is not initialized. Symbol table does not exist.\n");
   }
 }
 

@@ -67,16 +67,20 @@ typedef struct scopeList
     struct scopeList * parent;
     struct scopeList * child[MAXCHILDREN];
     int child_cnt;
+    int next_location;
   } * ScopeList;
 
 // pj3
 static ScopeList currScope;
 
-void init_currScope()
+ScopeList init_currScope()
 {
   currScope->name = "global";
   currScope->parent = NULL;
   currScope->child_cnt = 0;
+  currScope->next_location = 0;
+
+  return currScope;
 }
 
 
@@ -84,6 +88,7 @@ ScopeList insert_scope(char * name)
 {
   ScopeList newScope = (ScopeList)malloc(sizeof(struct scopeList));
 
+  // Generate scope name 
   if (name == NULL)
   {
     name = (char *)malloc(100 * sizeof(char));
@@ -91,8 +96,10 @@ ScopeList insert_scope(char * name)
   }
   else
     newScope->name = name;
+
   newScope->parent = currScope;
   newScope->child_cnt = 0;
+  newScope->next_location = 0;
 
   if (currScope != NULL && currScope->child_cnt < MAXCHILDREN)
   {
@@ -104,7 +111,7 @@ ScopeList insert_scope(char * name)
   return newScope;
 }
 
-void exitScope(ScopeList currScope)
+void exitScope()
 {
   if(currScope != NULL)
   {
@@ -119,11 +126,16 @@ void exitScope(ScopeList currScope)
  * memory locations into the symbol table
  * loc = memory location is inserted only the
  * first time, otherwise ignored
+ * 인자로 받은 scope에 insert
+ * scope가 null이라면 current scope에 insert
  */
-void st_insert(TreeNode * s, int loc )
-{ int h = hash(s->attr.name);
+void st_insert(TreeNode * s, ScopeList scope)
+{ 
+  if (scope == NULL)
+    scope = currScope;
+  int h = hash(s->attr.name);
 
-  BucketList l = currScope->hashTable[h];
+  BucketList l = scope->hashTable[h];
   while ((l != NULL) && (strcmp(s->attr.name,l->name) != 0))
     l = l->next;
 
@@ -132,13 +144,13 @@ void st_insert(TreeNode * s, int loc )
     l->name = s->attr.name;
     l->symbolK = s->kind.decl;
     l->type = s->type;
-    l->scope_name = currScope->name;
+    l->scope_name = scope->name;
     l->lines = (LineList) malloc(sizeof(struct LineListRec));
     l->lines->lineno = s->lineno;
-    l->memloc = loc;
+    l->memloc = scope->next_location++;
     l->lines->next = NULL;
-    l->next = currScope->hashTable[h];
-    currScope->hashTable[h] = l; 
+    l->next = scope->hashTable[h];
+    scope->hashTable[h] = l; 
   }
   else /* found in table, so just add line number */
   { LineList t = l->lines;
@@ -162,24 +174,26 @@ int st_lookup ( char * name )
     if (l != NULL) return l->memloc; 
     return -1; 
 }
-// Find Symbol including all parent scopes
-int st_lookup_all ( char * name )
+/*Find Symbol including all parent scopes
+  symbol이 존재하는 scope를 반환
+*/ 
+ScopeList st_lookup_all ( char * name )
 { 
+  int h = hash(name);
   ScopeList scope = currScope;
   while (scope != NULL)
   {
-    int h = hash(name);
     BucketList l = scope->hashTable[h];
     while ((l != NULL) && (strcmp(name,l->name) != 0))
       l = l->next;
-    if (l != NULL) return l->memloc;
+    if (l != NULL) return scope;
     scope = scope->parent;
   }
-  return -1;
+  return NULL;
 }
 
 // pj3
-const char *typeStrings[] = {"void", "int", "void[]", "int[]"};
+const char *typeStrings[] = {"void", "int", "void[]", "int[]", "undetermined"};
 /* Procedure printSymTab prints a formatted 
  * listing of the symbol table contents 
  * to the listing file
@@ -211,4 +225,7 @@ void printSymTab(FILE * listing, ScopeList scope)
       }
     }
   }
+  for(i=0; i < MAXCHILDREN; i++)
+    if(scope->child[i] != NULL)
+      printSymTab(listing, scope->child[i]);
 } /* printSymTab */

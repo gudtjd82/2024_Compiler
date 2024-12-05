@@ -14,17 +14,18 @@
 
 typedef struct scopeList *ScopeList;
 
-void init_currScope();
+ScopeList init_currScope();
 ScopeList insert_scope(char * name);
-void exitScope(ScopeList currScope);
-int st_lookup_all ( char * name );
+void exitScope();
 
 /* Procedure st_insert inserts line numbers and
  * memory locations into the symbol table
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(TreeNode * s, int loc );
+// pj3
+    // current scope의 next_location 값을 이용하기 때문에 인자로 loc을 받을 필요 없음.
+void st_insert(TreeNode * s, ScopeList scope);
 
 /* Function st_lookup returns the memory 
  * location of a variable or -1 if not found
@@ -35,6 +36,6 @@ int st_lookup ( char * name );
  * listing of the symbol table contents 
  * to the listing file
  */
-void printSymTab(FILE * listing);
+void printSymTab(FILE * listing, ScopeList scope);
 
 #endif

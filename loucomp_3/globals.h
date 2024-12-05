@@ -70,7 +70,7 @@ typedef enum {IfK,IfElseK,WhileK,ReturnK,CompoundK} StmtKind;
 typedef enum {AssignK,OpK,ConstK,VarK,CallK,ParamK} ExpKind;
 
 /* ExpType is used for type checking */
-typedef enum {Void,Integer, VoidArr, IntArr} ExpType;
+typedef enum {Void,Integer, VoidArr, IntArr, Undet} ExpType;
 
 #define MAXCHILDREN 3
 
