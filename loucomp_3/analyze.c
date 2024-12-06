@@ -232,21 +232,30 @@ static void print_error(char *name, int lineno, int errorNo)
  */
 static void checkNode(TreeNode * t)
 { switch (t->nodekind)
-  { case ExpK:
+  {
+    case ExpK:
       switch (t->kind.exp)
-      { case OpK:
+      { 
+        case AssignK:
+          
+          break;
+        case OpK:
           if ((t->child[0]->type != Integer) ||
               (t->child[1]->type != Integer))
-            typeError(t,"Op applied to non-integer");
-          if ((t->attr.op == EQ) || (t->attr.op == LT))
-            t->type = Boolean;
+            {
+              print_error(t->attr.name, t->lineno, 8);
+              t->type = Undet;
+            }
+
+          // if ((t->attr.op == EQ) || (t->attr.op == LT))
+          //   t->type = Boolean;
           else
             t->type = Integer;
           break;
         case ConstK:
-        case IdK:
           t->type = Integer;
           break;
+        case VarK:
         default:
           break;
       }
@@ -281,6 +290,7 @@ static void checkNode(TreeNode * t)
 
 /* Procedure typeCheck performs type checking 
  * by a postorder syntax tree traversal
+ * AST의 아래에서 위로 type checking
  */
 void typeCheck(TreeNode * syntaxTree)
 { traverse(syntaxTree,nullProc,checkNode);
