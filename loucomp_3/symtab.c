@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "symtab.h"
-#include "globals.h"
+
 
 /* SIZE is the size of the hash table */
 #define SIZE 211
@@ -33,8 +33,8 @@ static int hash ( char * key )
 }
 
 // pj3
-typedef enum {Variable, Function} SymK;
-const char* SymKStrings[] = {"Variable", "Function"};
+typedef enum {Variable, Function, Argument} SymK;
+const char* SymKStrings[] = {"Variable", "Function", "Argument"};
 
 /* the list of line numbers of the source 
  * code in which a variable is referenced
@@ -65,7 +65,7 @@ typedef struct scopeList
     char * name;
     BucketList hashTable[SIZE];
     struct scopeList * parent;
-    struct scopeList * child[MAXCHILDREN];
+    struct scopeList * child[SCPMAXCHILDREN];
     int child_cnt;
     int next_location;
   } * ScopeList;
@@ -75,6 +75,7 @@ static ScopeList currScope;
 
 ScopeList init_currScope()
 {
+  currScope = (ScopeList) malloc(sizeof(struct scopeList));
   currScope->name = "global";
   currScope->parent = NULL;
   currScope->child_cnt = 0;
@@ -101,7 +102,7 @@ ScopeList insert_scope(char * name)
   newScope->child_cnt = 0;
   newScope->next_location = 0;
 
-  if (currScope != NULL && currScope->child_cnt < MAXCHILDREN)
+  if (currScope != NULL && currScope->child_cnt < SCPMAXCHILDREN)
   {
     currScope->child[currScope->child_cnt++] = newScope;
   }
@@ -161,6 +162,35 @@ void st_insert(TreeNode * s, ScopeList scope)
   }
 } /* st_insert */
 
+int insert_param(TreeNode *s, ScopeList scope)
+{
+  if (scope == NULL)
+    scope = currScope;
+  int h = hash(s->attr.name);
+
+  BucketList l = scope->hashTable[h];
+  while ((l != NULL) && (strcmp(s->attr.name,l->name) != 0))
+    l = l->next;
+
+  if (l == NULL) /* variable not yet in table */
+  { l = (BucketList) malloc(sizeof(struct BucketListRec));
+    l->name = s->attr.name;
+    l->symbolK = Argument;
+    l->type = s->type;
+    l->scope_name = scope->name;
+    l->lines = (LineList) malloc(sizeof(struct LineListRec));
+    l->lines->lineno = s->lineno;
+    l->memloc = scope->next_location++;
+    l->lines->next = NULL;
+    l->next = scope->hashTable[h];
+    scope->hashTable[h] = l; 
+
+    return 0;
+  }
+  else
+    return -1;
+}
+
 /* Function st_lookup returns the memory 
  * location of a variable or -1 if not found
  */
@@ -177,7 +207,7 @@ int st_lookup ( char * name )
 /*Find Symbol including all parent scopes
   symbol이 존재하는 scope를 반환
 */ 
-ScopeList st_lookup_all ( char * name )
+ScopeList st_lookup_up ( char * name )
 { 
   int h = hash(name);
   ScopeList scope = currScope;
@@ -191,9 +221,52 @@ ScopeList st_lookup_all ( char * name )
   }
   return NULL;
 }
+ScopeList st_lookup_down ( char * name, ScopeList scope )
+{ 
+  if (scope == NULL) {
+        return NULL; 
+    }
+
+    int h = hash(name);
+    BucketList l = scope->hashTable[h];
+    while (l != NULL) {
+        if (strcmp(name, l->name) == 0)
+            return scope; 
+        l = l->next;
+    }
+
+    for (int i = 0; i < SCPMAXCHILDREN; i++) {
+        if (scope->child[i] != NULL) {
+            ScopeList found = st_lookup_down(name, scope->child[i]);
+            if (found != NULL)
+                return found; 
+        }
+    }
+
+    return NULL; 
+}
+
+ExpType get_argType(ScopeList scope, int memloc)
+{
+  if (scope == NULL)
+    scope = currScope;
+  
+  for(int i=0; i < SIZE; i++)
+  {
+    BucketList l = scope->hashTable[i];
+    if(l == NULL)
+      continue;
+      
+    if(l->symbolK == Argument)
+      if(l->memloc == memloc)
+        return l->type;
+  }
+
+  return -1;
+}
 
 // pj3
-const char *typeStrings[] = {"void", "int", "void[]", "int[]", "undetermined"};
+const char *type_strings[] = {"void", "int", "void[]", "int[]", "undetermined"};
 /* Procedure printSymTab prints a formatted 
  * listing of the symbol table contents 
  * to the listing file
@@ -202,6 +275,8 @@ void printSymTab(FILE * listing, ScopeList scope)
 { 
   int i;
   BucketList l;
+  fprintf(listing,"\n");
+  fprintf(listing,"\n");
   fprintf(listing,"Symbol Name    Symbol Kind    Symbol Type    Scope Name    Location   Line Numbers\n");
   fprintf(listing,"------------   ------------   ------------   ------------  --------   ------------\n");
   for (i=0;i<SIZE;++i)
@@ -213,7 +288,7 @@ void printSymTab(FILE * listing, ScopeList scope)
         LineList t = l->lines;
         fprintf(listing,"%-14s ",l->name);
         fprintf(listing,"%-14s ",SymKStrings[l->symbolK]);
-        fprintf(listing,"%-14s ",typeStrings[l->type]);
+        fprintf(listing,"%-14s ",type_strings[l->type]);
         fprintf(listing,"%-14s ",l->scope_name);
         fprintf(listing,"%-9d  ",l->memloc);
         while (t != NULL)
@@ -225,7 +300,7 @@ void printSymTab(FILE * listing, ScopeList scope)
       }
     }
   }
-  for(i=0; i < MAXCHILDREN; i++)
+  for(i=0; i < SCPMAXCHILDREN; i++)
     if(scope->child[i] != NULL)
       printSymTab(listing, scope->child[i]);
 } /* printSymTab */

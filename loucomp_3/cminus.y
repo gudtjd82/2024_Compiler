@@ -65,6 +65,7 @@ var_decl    : type identifier SEMI
                   TreeNode *t = newDeclNode(VarDK);
                   t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
+                  t->lineno = $2->lineno;
                   $$ = t;
                 }
             | type identifier LBRACKET number RBRACKET SEMI
@@ -72,6 +73,7 @@ var_decl    : type identifier SEMI
                   TreeNode *t = newDeclNode(VarDK);
                   t->attr.name = copyString($2->attr.name);
                   t->type = $1->type+2;
+                  t->lineno = $2->lineno;
 
                   TreeNode *arrSize = newExpNode(ConstK);
                   arrSize->attr.val = $4->attr.val;
@@ -110,6 +112,7 @@ func_decl   : type identifier LPAREN params RPAREN compound
                   TreeNode *t = newDeclNode(FuncDK);
                   t->attr.name = copyString($2->attr.name);
                   t->type = $1->type;
+                  t->lineno = $2->lineno;
                   t->child[0] = $4;
                   t->child[1] = $6;
 
